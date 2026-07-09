@@ -622,6 +622,16 @@ main {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--accent);
 }
+.gen-hint a {
+  color: var(--accent);
+}
+.gen-raw {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+  opacity: 0.8;
+}
 .gen-error {
   color: #ffd7d7;
   background: rgba(255, 107, 107, 0.1);

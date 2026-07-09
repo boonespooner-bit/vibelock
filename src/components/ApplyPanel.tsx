@@ -137,10 +137,20 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
           turn these prompts into real images. The before/after preview above still works without it.
         </p>
       )}
-      {gen.status === 'error' && (
-        <p className={`gen-error ${gen.code === 'no_api_key' ? 'gen-hint' : ''}`}>
-          {gen.message}
-        </p>
+      {gen.status === 'error' && gen.code === 'quota' && (
+        <div className="gen-hint">
+          <strong>Out of image quota.</strong> Gemini's image models need billing enabled — the free
+          tier has zero image quota. Enable billing on your key's Google Cloud project, then{' '}
+          <strong>generate a fresh API key</strong> (keys made before billing stay stuck on the free
+          tier) and update <code>GEMINI_API_KEY</code>.{' '}
+          <a href="https://ai.google.dev/gemini-api/docs/rate-limits" target="_blank" rel="noreferrer">
+            Rate-limit docs →
+          </a>
+          <span className="gen-raw">{gen.message}</span>
+        </div>
+      )}
+      {gen.status === 'error' && gen.code !== 'quota' && (
+        <p className={`gen-error ${gen.code === 'no_api_key' ? 'gen-hint' : ''}`}>{gen.message}</p>
       )}
     </section>
   );

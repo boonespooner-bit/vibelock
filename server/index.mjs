@@ -96,8 +96,12 @@ app.post('/api/generate', async (req, res) => {
     const data = await upstream.json().catch(() => null);
     if (!upstream.ok) {
       const message = data?.error?.message || `Gemini API error (${upstream.status}).`;
-      // Surface auth/quota problems clearly; don't leak the key.
-      return res.status(upstream.status === 429 ? 429 : 502).json({ error: 'upstream', message });
+      // Distinguish quota/billing (429) from other upstream failures so the UI
+      // can give actionable guidance. Don't leak the key.
+      if (upstream.status === 429) {
+        return res.status(429).json({ error: 'quota', message });
+      }
+      return res.status(502).json({ error: 'upstream', message });
     }
 
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
