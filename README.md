@@ -22,20 +22,27 @@ you curate; it does the articulating.
 
 Three steps, matching the pitch:
 
-1. **Drop a mood board** — pick a starter board (uploads are stubbed). Each board
-   is a small cluster of points in an 8-axis aesthetic space.
-2. **Swipe your taste** — Vibe-Lock spins the board into micro-variations. You
-   swipe (drag, tap the buttons, or use ← / →). A live meter shows the Taste
-   Engine converging. Later cards are quietly biased toward your emerging taste.
+1. **Drop a mood board** — upload your own photos, or pick a starter board. Each
+   uploaded image is analyzed on-device (`src/engine/analyze.ts`) into the same
+   8-axis aesthetic space; a board is just a cluster of points in that space.
+2. **Get your vibe** — "Reveal my vibe" reads the board's signature (the axes its
+   images *agree* on) and gives you a prompt immediately, no swiping. Or "Refine
+   by swiping": Vibe-Lock spins micro-variations and you swipe (drag, buttons, or
+   ← / →) while a live meter shows the Taste Engine converging.
 3. **Lock it** — you get your Taste Engine: a fingerprint of which axes you care
    about and where your taste sits, the prompt vocabulary it now speaks, an
-   exportable `.tasteengine.json`, and a panel that styles *any* plain subject
-   you type.
+   exportable `.tasteengine.json`, and a panel that styles *any* plain subject you
+   type (and renders it, if a Gemini key is configured).
 
 ### What's real here (and what a full build would add)
 
 The learning loop and articulation are genuinely implemented and unit-tested:
 
+- **Real image analysis** (`src/engine/analyze.ts`). Uploaded photos are read on
+  a canvas into the 8-axis vector: mean luminance → brightness, R-vs-B →
+  warmth, HSV → saturation, luminance spread → contrast, high-frequency energy →
+  texture/grain, and Sobel edges (on a de-grained blur) → density and
+  geometric-vs-organic form. Free, private, and quota-free.
 - **Real signal from swipes.** Cards aren't stock images — each is an SVG
   rendered deterministically from its aesthetic vector (`src/engine/render.ts`),
   so a "warm grainy" card really is warmer and grainier. Swiping produces true
@@ -83,8 +90,9 @@ The `/api/generate` endpoint has a basic per-IP rate limit and prompt-length cap
 src/
   engine/                 # framework-free, fully unit-tested core
     aesthetics.ts         # the 8-axis feature space + seedable PRNG
+    analyze.ts            # uploaded image -> aesthetic vector (canvas pixel math)
     variation.ts          # starter boards + micro-variation generator
-    tasteEngine.ts        # learn() weights axes; distance/affinity/rank/applyLock
+    tasteEngine.ts        # learn()/profileFromVectors(); distance/rank/applyLock
     prompt.ts             # the Articulation-Gap bridge: profile -> prompt words
     render.ts             # deterministic SVG image from an aesthetic vector
     portable.ts           # the exportable, ownable "Taste Engine" artifact

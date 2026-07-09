@@ -51,6 +51,38 @@ function variance(vecs: Vec[], m: Vec): Vec {
   return out;
 }
 
+// Derive a taste profile straight from a set of images (an uploaded mood board),
+// with no swiping. The signature of a mood board is what its images *agree* on:
+// if they're all warm and grainy but vary in density, then warmth and texture
+// are load-bearing and density is incidental. So the target is the centroid and
+// each axis's weight is its consistency (low variance -> high weight).
+export function profileFromVectors(vecs: Vec[]): TasteProfile {
+  if (vecs.length === 0) return emptyProfile();
+  const target = mean(vecs);
+  const varr = variance(vecs, target);
+
+  const weights = zeroVec();
+  let stdSum = 0;
+  for (let i = 0; i < DIM; i++) {
+    const std = Math.sqrt(varr[i]);
+    stdSum += std;
+    // Full agreement (std 0) -> 1; a wide spread (std ~0.3) -> ~0.
+    weights[i] = Math.max(0, 1 - Math.min(1, std / 0.3));
+  }
+  // Scale so the most-defining axis reads as 1, matching learn()'s output range
+  // (and a single image, with zero variance everywhere, stays fully weighted).
+  const maxW = Math.max(...weights, EPS);
+  for (let i = 0; i < DIM; i++) weights[i] = weights[i] / maxW;
+
+  const agreement = 1 - Math.min(1, stdSum / DIM / 0.3);
+  const volume = 1 - Math.exp(-vecs.length / 3);
+  const confidence = Math.max(0, Math.min(1, 0.3 + 0.4 * volume + 0.3 * agreement));
+
+  // Model the board as "likes" so downstream code (which reads likes/dislikes)
+  // behaves sensibly; there are no explicit dislikes yet.
+  return { target, weights, confidence, likes: vecs.length, dislikes: 0 };
+}
+
 // The learning step. Given every swipe so far, derive the taste profile.
 //
 // The core idea: an axis matters to the user when their likes and dislikes

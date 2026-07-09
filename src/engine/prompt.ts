@@ -13,24 +13,26 @@ type Band = { max: number; phrases: string[] };
 // For each axis, phrasing for the low end, the middle (usually silence — a
 // neutral value isn't worth spending prompt tokens on), and the high end.
 const VOCAB: Record<AxisKey, Band[]> = {
+  // Middle bands are intentionally empty: a near-neutral value on an axis isn't
+  // worth spending prompt words on, so we only speak up for a clear lean.
   warmth: [
     { max: 0.33, phrases: ['cool blue tones', 'steely cold color grade'] },
-    { max: 0.66, phrases: ['neutral white balance'] },
+    { max: 0.66, phrases: [] },
     { max: 1.0, phrases: ['warm golden tones', 'amber sunlit color grade'] },
   ],
   brightness: [
     { max: 0.33, phrases: ['low-key lighting', 'deep shadows', 'moody underexposure'] },
-    { max: 0.66, phrases: ['balanced natural light'] },
+    { max: 0.66, phrases: [] },
     { max: 1.0, phrases: ['high-key lighting', 'bright airy exposure', 'soft daylight'] },
   ],
   saturation: [
     { max: 0.33, phrases: ['desaturated muted palette', 'washed-out colors'] },
-    { max: 0.66, phrases: ['natural saturation'] },
+    { max: 0.66, phrases: [] },
     { max: 1.0, phrases: ['vivid saturated colors', 'punchy technicolor palette'] },
   ],
   contrast: [
     { max: 0.33, phrases: ['soft low-contrast', 'gentle flat lighting'] },
-    { max: 0.66, phrases: ['medium contrast'] },
+    { max: 0.66, phrases: [] },
     { max: 1.0, phrases: ['high contrast', 'chiaroscuro lighting', 'deep blacks and bright highlights'] },
   ],
   texture: [
@@ -75,10 +77,12 @@ export interface PromptStyle {
 // Build the style clause from a locked profile. Only axes above `threshold`
 // weight contribute, so we never over-constrain what the user didn't care
 // about.
-export function synthesizeStyle(profile: TasteProfile, threshold = 0.35): PromptStyle {
+export function synthesizeStyle(profile: TasteProfile, threshold = 0.35, maxTags = 6): PromptStyle {
   const tags: string[] = [];
-  // Walk axes strongest-first so the most important style cues lead.
+  // Walk axes strongest-first so the most important style cues lead, and stop
+  // once we have enough — a focused prompt beats a kitchen-sink one.
   for (const { key, weight } of dominantAxes(profile, AXIS_KEYS.length)) {
+    if (tags.length >= maxTags) break;
     if (weight < threshold) continue;
     const val = profile.target[AXIS_KEYS.indexOf(key)];
     const band = VOCAB[key].find((b) => val <= b.max);

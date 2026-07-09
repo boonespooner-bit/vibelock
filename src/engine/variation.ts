@@ -15,6 +15,15 @@ export interface MoodItem {
   label: string;
   emoji: string;
   vec: Vec;
+  // Present for uploaded images: a small data: URL thumbnail to display.
+  thumb?: string;
+}
+
+// A mood board is just a named set of items, whether preset or user-uploaded.
+export interface Board {
+  id: string;
+  name: string;
+  items: MoodItem[];
 }
 
 function v(partial: Partial<Record<(typeof AXIS_KEYS)[number], number>>): Vec {

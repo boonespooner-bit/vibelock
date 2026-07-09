@@ -215,6 +215,109 @@ main {
   border-radius: 999px;
   padding: 4px 10px;
 }
+.board-card--active {
+  border-style: dashed;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--muted);
+}
+.board-card--active:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+}
+.board-card--active .upload-plus {
+  font-size: 40px;
+}
+
+/* ---- upload tray ---- */
+.tray {
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 0 0 1px rgba(185, 139, 255, 0.15), var(--shadow);
+}
+.tray-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.tray-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.tray-hint {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.tray-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.tray-item {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.tray-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tray-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(12, 11, 16, 0.72);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tray-remove:hover {
+  background: var(--drop);
+}
+.tray-add {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1px dashed var(--line);
+  background: var(--panel-2);
+  color: var(--accent);
+  font-size: 24px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.tray-add:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.tray-add:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tray-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
 /* ---- swipe deck ---- */
 .deck-stage {
