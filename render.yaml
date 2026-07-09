@@ -1,0 +1,26 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Vibe-Lock is a fully client-side Vite SPA, so it deploys as a free Static Site.
+services:
+  - type: web
+    name: vibe-lock
+    runtime: static
+    # npm ci installs devDependencies (vite, typescript) which the build needs.
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    # Build previews for every PR opened against the repo.
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    # SPA fallback: serve index.html for any path so client routing/deep links work.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
