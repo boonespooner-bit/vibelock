@@ -1,25 +1,21 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
-# Vibe-Lock is a fully client-side Vite SPA, so it deploys as a free Static Site.
+# Vibe-Lock now needs a server (to proxy Gemini and keep the API key secret), so
+# it runs as a Node Web Service that serves the built frontend AND the /api routes
+# from one origin.
 services:
   - type: web
     name: vibe-lock
-    runtime: static
-    # npm ci installs devDependencies (vite, typescript) which the build needs.
+    runtime: node
+    plan: free
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
-    # Build previews for every PR opened against the repo.
-    pullRequestPreviewsEnabled: true
+    startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
+      # Secret — do NOT put the value here. Set it in the Render dashboard
+      # (Environment tab). `sync: false` tells Render to prompt for it.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_IMAGE_MODEL
+        value: gemini-2.5-flash-image
       - key: NODE_VERSION
         value: "22"
-    # No SPA rewrite: this is a single page with no client-side routes, so a
-    # catch-all `/* -> /index.html` rewrite only risks intercepting requests for
-    # /assets/*.js and serving HTML back (wrong MIME type -> blank page). Render
-    # serves index.html at / and the hashed assets directly, which is all we need.
-    headers:
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN

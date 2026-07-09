@@ -5,14 +5,18 @@
   "type": "module",
   "description": "Turn curation into a generative act. Swipe your taste into a portable Taste Engine.",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"npm:dev:server\"",
+    "dev:web": "vite",
+    "dev:server": "node --env-file-if-exists=.env --watch server/index.mjs",
     "build": "tsc -b && vite build",
+    "start": "node server/index.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "express": "^4.21.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -20,6 +24,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",

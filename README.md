@@ -48,9 +48,34 @@ The learning loop and articulation are genuinely implemented and unit-tested:
   translated back into concrete generative vocabulary — but only for the axes
   you cared about, and only the end you landed on.
 
-A production build would swap the SVG renderer + preference model for actual
-image/video generation and a lightweight per-user LoRA; the interaction design,
-the taste-weighting logic, and the taste→language mapping carry over unchanged.
+A production build would swap the per-axis preference model for a lightweight
+per-user LoRA; the interaction design, the taste-weighting logic, and the
+taste→language mapping carry over unchanged. **Real image generation is already
+wired up** (see below) — the locked taste drives an actual Gemini render.
+
+## Real image generation (Gemini)
+
+Locking a vibe produces a styled prompt; **"✨ Generate with Gemini"** turns it
+into a real image. The subject you type is run through your taste engine
+(`styledPrompt`) and the finished prompt is sent to Google's
+`gemini-2.5-flash-image` model, which returns the render.
+
+The API key is **never** in the browser. A thin Node server (`server/index.mjs`)
+holds `GEMINI_API_KEY`, proxies the call, and serves the frontend from the same
+origin. Without a key the app still runs fully — you get the instant SVG
+before/after preview and copyable prompts; only the "Generate" button is gated,
+with an in-app hint.
+
+To enable it locally:
+
+```bash
+cp .env.example .env
+# paste a key from https://aistudio.google.com/apikey into .env
+npm run dev        # web (5173) + api (8787) together; Vite proxies /api
+```
+
+The `/api/generate` endpoint has a basic per-IP rate limit and prompt-length cap
+— fine for a prototype, swap for a real limiter before scaling.
 
 ## Architecture
 
@@ -64,8 +89,11 @@ src/
     render.ts             # deterministic SVG image from an aesthetic vector
     portable.ts           # the exportable, ownable "Taste Engine" artifact
     __tests__/            # vitest coverage of the learning + articulation logic
+  lib/generate.ts         # client for the /api generation proxy
   components/             # React UI (mood board, swipe deck, lock screen, apply)
   App.tsx                 # phase orchestration + adaptive card generation
+server/
+  index.mjs               # Express: serves dist/ + proxies Gemini (key stays here)
 ```
 
 The `engine/` directory has no React dependency — the taste logic is portable to
@@ -75,10 +103,19 @@ a backend or another surface.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm run dev        # frontend (5173) + backend (8787); needs .env for generation
+npm run dev:web    # frontend only (no server) — preview/swipe/lock still work
 npm test           # engine unit tests (vitest)
 npm run build      # typecheck + production build
+npm start          # run the production server (serves dist/ + /api) on :8787
 ```
+
+## Deploy (Render)
+
+The included `render.yaml` deploys a single **Node web service** that serves the
+frontend and the API together. After connecting the repo as a Blueprint, set
+`GEMINI_API_KEY` in the Render dashboard (it's marked `sync: false` so it's never
+committed). The service exposes `/api/health` for health checks.
 
 ## The moat
 

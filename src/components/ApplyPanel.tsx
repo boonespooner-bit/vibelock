@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DIM, hashString, rng } from '../engine/aesthetics';
 import { applyLock, TasteProfile } from '../engine/tasteEngine';
 import { styledPrompt } from '../engine/prompt';
+import { checkHealth, generateImage, GenerateError, Health } from '../lib/generate';
 import { Swatch } from './Swatch';
 
 const EXAMPLES = [
@@ -13,19 +14,34 @@ const EXAMPLES = [
 
 // A stand-in for a "raw" model generation of the subject: deterministic, roughly
 // neutral aesthetics seeded by the words. Applying the lock bends it toward the
-// user's taste — the before/after makes the filter tangible.
+// user's taste — the before/after makes the filter tangible even before a real
+// render comes back.
 function rawVecFor(subject: string): number[] {
   const rand = rng(hashString(subject || 'seed'));
   return Array.from({ length: DIM }, () => 0.35 + rand() * 0.3);
 }
 
+type GenState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'done'; image: string; prompt: string }
+  | { status: 'error'; code: string; message: string };
+
 export function ApplyPanel({ profile }: { profile: TasteProfile }) {
   const [subject, setSubject] = useState(EXAMPLES[0]);
   const [copied, setCopied] = useState(false);
+  const [health, setHealth] = useState<Health | null>(null);
+  const [gen, setGen] = useState<GenState>({ status: 'idle' });
+  const abortRef = useRef<AbortController | null>(null);
 
   const raw = useMemo(() => rawVecFor(subject), [subject]);
   const locked = useMemo(() => applyLock(profile, raw, 1), [profile, raw]);
   const prompt = useMemo(() => styledPrompt(profile, subject), [profile, subject]);
+
+  useEffect(() => {
+    checkHealth().then(setHealth);
+    return () => abortRef.current?.abort();
+  }, []);
 
   const copy = async () => {
     try {
@@ -36,6 +52,23 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
       /* clipboard unavailable — the text is visible to copy manually */
     }
   };
+
+  const generate = async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setGen({ status: 'loading' });
+    try {
+      const result = await generateImage(prompt, ctrl.signal);
+      setGen({ status: 'done', image: result.image, prompt: result.prompt });
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return;
+      const err = e as GenerateError;
+      setGen({ status: 'error', code: err.code ?? 'error', message: err.message });
+    }
+  };
+
+  const genUnavailable = health !== null && !health.hasKey;
 
   return (
     <section className="panel apply">
@@ -67,8 +100,15 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
           →
         </div>
         <figure className="ba-item">
-          <Swatch vec={locked} id={`locked-${hashString(subject)}`} className="ba-art ba-art--locked" />
-          <figcaption>Through your Vibe-Lock</figcaption>
+          {gen.status === 'done' ? (
+            <img className="ba-art ba-art--locked ba-art--real" src={gen.image} alt="Gemini render in your locked style" />
+          ) : (
+            <div className={`ba-art ba-art--locked ${gen.status === 'loading' ? 'ba-art--loading' : ''}`}>
+              <Swatch vec={locked} id={`locked-${hashString(subject)}`} className="ba-art" />
+              {gen.status === 'loading' && <div className="gen-overlay">Generating…</div>}
+            </div>
+          )}
+          <figcaption>{gen.status === 'done' ? 'Gemini · your Vibe-Lock' : 'Through your Vibe-Lock'}</figcaption>
         </figure>
       </div>
 
@@ -78,6 +118,30 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
           {copied ? 'Copied ✓' : 'Copy prompt'}
         </button>
       </div>
+
+      <div className="gen-row">
+        <button className="btn btn--primary" onClick={generate} disabled={gen.status === 'loading'}>
+          {gen.status === 'loading' ? '✨ Generating…' : '✨ Generate with Gemini'}
+        </button>
+        {gen.status === 'done' && (
+          <a className="btn btn--small" href={gen.image} download={`vibe-lock-${hashString(subject)}.png`}>
+            ⬇ Save image
+          </a>
+        )}
+        {health?.hasKey && <span className="gen-note">model: {health.model}</span>}
+      </div>
+
+      {genUnavailable && (
+        <p className="gen-hint">
+          Real generation is off — the server has no <code>GEMINI_API_KEY</code>. Add one (see README) to
+          turn these prompts into real images. The before/after preview above still works without it.
+        </p>
+      )}
+      {gen.status === 'error' && (
+        <p className={`gen-error ${gen.code === 'no_api_key' ? 'gen-hint' : ''}`}>
+          {gen.message}
+        </p>
+      )}
     </section>
   );
 }
