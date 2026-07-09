@@ -12,11 +12,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-    # SPA fallback: serve index.html for any path so client routing/deep links work.
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    # No SPA rewrite: this is a single page with no client-side routes, so a
+    # catch-all `/* -> /index.html` rewrite only risks intercepting requests for
+    # /assets/*.js and serving HTML back (wrong MIME type -> blank page). Render
+    # serves index.html at / and the hashed assets directly, which is all we need.
     headers:
       - path: /*
         name: X-Content-Type-Options
