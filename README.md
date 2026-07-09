@@ -73,6 +73,10 @@ origin. Without a key the app still runs fully — you get the instant SVG
 before/after preview and copyable prompts; only the "Generate" button is gated,
 with an in-app hint.
 
+Every render is saved to a **gallery** (top-bar button), backed by IndexedDB so
+it persists across sessions. Click a tile to see its full prompt, download it, or
+delete it (`src/lib/gallery.ts`, `src/components/Gallery.tsx`).
+
 To enable it locally:
 
 ```bash
@@ -98,7 +102,8 @@ src/
     portable.ts           # the exportable, ownable "Taste Engine" artifact
     __tests__/            # vitest coverage of the learning + articulation logic
   lib/generate.ts         # client for the /api generation proxy
-  components/             # React UI (mood board, swipe deck, lock screen, apply)
+  lib/gallery.ts          # IndexedDB-backed store of past generations (+ hook)
+  components/             # React UI (mood board, swipe deck, lock screen, apply, gallery)
   App.tsx                 # phase orchestration + adaptive card generation
 server/
   index.mjs               # Express: serves dist/ + proxies Gemini (key stays here)

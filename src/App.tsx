@@ -4,6 +4,8 @@ import { learn, profileFromVectors, rank, Swipe } from './engine/tasteEngine';
 import { MoodBoard } from './components/MoodBoard';
 import { SwipeDeck } from './components/SwipeDeck';
 import { LockScreen } from './components/LockScreen';
+import { Gallery } from './components/Gallery';
+import { useGallery } from './lib/gallery';
 
 type Phase = 'board' | 'swipe' | 'lock';
 
@@ -17,6 +19,8 @@ export default function App() {
   const [index, setIndex] = useState(0);
   const [swipes, setSwipes] = useState<Swipe[]>([]);
   const [batchSeed, setBatchSeed] = useState(1);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const gallery = useGallery();
 
   // Two sources of truth for taste, blended by evidence:
   //  - boardProfile: read straight from the mood board (what its images agree on)
@@ -78,6 +82,9 @@ export default function App() {
           <span className="brand-name">Vibe-Lock</span>
         </div>
         <p className="tagline">Curate your taste. Lock it. Generate as you.</p>
+        <button className="gallery-btn" onClick={() => setGalleryOpen(true)}>
+          🖼 Gallery{gallery.length ? ` · ${gallery.length}` : ''}
+        </button>
       </header>
 
       <main>
@@ -98,6 +105,8 @@ export default function App() {
           <LockScreen profile={profile} onRemix={() => setPhase('swipe')} onReset={reset} />
         )}
       </main>
+
+      <Gallery open={galleryOpen} onClose={() => setGalleryOpen(false)} />
 
       <footer className="footer">
         <span>

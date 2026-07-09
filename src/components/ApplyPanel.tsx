@@ -3,6 +3,7 @@ import { DIM, hashString, rng } from '../engine/aesthetics';
 import { applyLock, TasteProfile } from '../engine/tasteEngine';
 import { styledPrompt } from '../engine/prompt';
 import { checkHealth, generateImage, GenerateError, Health } from '../lib/generate';
+import { addGeneration } from '../lib/gallery';
 import { Swatch } from './Swatch';
 
 const EXAMPLES = [
@@ -61,6 +62,8 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
     try {
       const result = await generateImage(prompt, ctrl.signal);
       setGen({ status: 'done', image: result.image, prompt: result.prompt });
+      // Save to the persistent gallery (best-effort).
+      void addGeneration({ subject, prompt: result.prompt, model: result.model, image: result.image });
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') return;
       const err = e as GenerateError;
