@@ -890,6 +890,19 @@ main {
   word-break: break-word;
 }
 
+/* ---- aspect ratio ---- */
+.ratio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.ratio-num {
+  opacity: 0.6;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+}
+
 /* ---- gemini generation ---- */
 .gen-row {
   display: flex;

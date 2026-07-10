@@ -73,6 +73,10 @@ origin. Without a key the app still runs fully — you get the instant SVG
 before/after preview and copyable prompts; only the "Generate" button is gated,
 with an in-app hint.
 
+Pick an **aspect ratio** (square / landscape / portrait / wide) before generating
+— the before/after preview reshapes to match and the ratio is passed to the model
+via `imageConfig.aspectRatio`.
+
 Every render is saved to a **gallery** (top-bar button), backed by IndexedDB so
 it persists across sessions. Click a tile to see its full prompt, download it, or
 delete it (`src/lib/gallery.ts`, `src/components/Gallery.tsx`).

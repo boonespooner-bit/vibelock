@@ -13,6 +13,13 @@ const EXAMPLES = [
   'a portrait of an old sailor',
 ];
 
+const RATIOS: { id: string; label: string }[] = [
+  { id: '1:1', label: 'Square' },
+  { id: '4:3', label: 'Landscape' },
+  { id: '3:4', label: 'Portrait' },
+  { id: '16:9', label: 'Wide' },
+];
+
 // A stand-in for a "raw" model generation of the subject: deterministic, roughly
 // neutral aesthetics seeded by the words. Applying the lock bends it toward the
 // user's taste — the before/after makes the filter tangible even before a real
@@ -30,6 +37,7 @@ type GenState =
 
 export function ApplyPanel({ profile }: { profile: TasteProfile }) {
   const [subject, setSubject] = useState(EXAMPLES[0]);
+  const [ratio, setRatio] = useState('1:1');
   const [copied, setCopied] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [gen, setGen] = useState<GenState>({ status: 'idle' });
@@ -38,6 +46,7 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
   const raw = useMemo(() => rawVecFor(subject), [subject]);
   const locked = useMemo(() => applyLock(profile, raw, 1), [profile, raw]);
   const prompt = useMemo(() => styledPrompt(profile, subject), [profile, subject]);
+  const aspectStyle = { aspectRatio: ratio.replace(':', ' / ') };
 
   useEffect(() => {
     checkHealth().then(setHealth);
@@ -60,7 +69,7 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
     abortRef.current = ctrl;
     setGen({ status: 'loading' });
     try {
-      const result = await generateImage(prompt, ctrl.signal);
+      const result = await generateImage(prompt, ratio, ctrl.signal);
       setGen({ status: 'done', image: result.image, prompt: result.prompt });
       // Save to the persistent gallery (best-effort).
       void addGeneration({ subject, prompt: result.prompt, model: result.model, image: result.image });
@@ -94,9 +103,22 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
         ))}
       </div>
 
+      <div className="ratio-row" role="group" aria-label="Aspect ratio">
+        {RATIOS.map((r) => (
+          <button
+            key={r.id}
+            className={`chip chip--btn ${r.id === ratio ? 'chip--active' : ''}`}
+            onClick={() => setRatio(r.id)}
+            title={r.id}
+          >
+            {r.label} <span className="ratio-num">{r.id}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="ba">
         <figure className="ba-item">
-          <Swatch vec={raw} id={`raw-${hashString(subject)}`} className="ba-art" />
+          <Swatch vec={raw} id={`raw-${hashString(subject)}`} className="ba-art" style={aspectStyle} />
           <figcaption>Raw model</figcaption>
         </figure>
         <div className="ba-arrow" aria-hidden>
@@ -104,10 +126,18 @@ export function ApplyPanel({ profile }: { profile: TasteProfile }) {
         </div>
         <figure className="ba-item">
           {gen.status === 'done' ? (
-            <img className="ba-art ba-art--locked ba-art--real" src={gen.image} alt="Gemini render in your locked style" />
+            <img
+              className="ba-art ba-art--locked ba-art--real"
+              style={aspectStyle}
+              src={gen.image}
+              alt="Gemini render in your locked style"
+            />
           ) : (
-            <div className={`ba-art ba-art--locked ${gen.status === 'loading' ? 'ba-art--loading' : ''}`}>
-              <Swatch vec={locked} id={`locked-${hashString(subject)}`} className="ba-art" />
+            <div
+              className={`ba-art ba-art--locked ${gen.status === 'loading' ? 'ba-art--loading' : ''}`}
+              style={aspectStyle}
+            >
+              <Swatch vec={locked} id={`locked-${hashString(subject)}`} className="ba-art" style={aspectStyle} />
               {gen.status === 'loading' && <div className="gen-overlay">Generating…</div>}
             </div>
           )}

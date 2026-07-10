@@ -77,10 +77,19 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'prompt_too_long', message: `Prompt exceeds ${MAX_PROMPT} characters.` });
   }
 
+  // Optional aspect ratio, constrained to values the image models accept.
+  const ASPECTS = new Set(['1:1', '4:3', '3:4', '16:9', '9:16', '3:2', '2:3']);
+  const aspectRatio = typeof req.body?.aspectRatio === 'string' && ASPECTS.has(req.body.aspectRatio)
+    ? req.body.aspectRatio
+    : null;
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+  const generationConfig = { responseModalities: ['TEXT', 'IMAGE'] };
+  // imageConfig.aspectRatio is the supported control for Gemini image models.
+  if (aspectRatio && aspectRatio !== '1:1') generationConfig.imageConfig = { aspectRatio };
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+    generationConfig,
   };
 
   const ctrl = new AbortController();

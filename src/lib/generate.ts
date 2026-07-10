@@ -16,13 +16,17 @@ export class GenerateError extends Error {
   }
 }
 
-export async function generateImage(prompt: string, signal?: AbortSignal): Promise<GenerateResult> {
+export async function generateImage(
+  prompt: string,
+  aspectRatio?: string,
+  signal?: AbortSignal,
+): Promise<GenerateResult> {
   let res: Response;
   try {
     res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, aspectRatio }),
       signal,
     });
   } catch (e) {
