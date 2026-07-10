@@ -7,7 +7,10 @@ services:
     name: vibe-lock
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    # --include=dev is essential: Render sets NODE_ENV=production, which would
+    # otherwise make npm skip devDependencies (typescript, vite) and the build
+    # would fail. Force them in so `npm run build` has its toolchain.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

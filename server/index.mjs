@@ -17,7 +17,12 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
 
-const PORT = process.env.PORT || 8787;
+const PORT = Number(process.env.PORT) || 8787;
+const HOST = '0.0.0.0'; // bind all interfaces so platform health checks can reach us
+
+// Surface any startup/async crash in the logs instead of dying silently.
+process.on('unhandledRejection', (e) => console.error('unhandledRejection:', e));
+process.on('uncaughtException', (e) => console.error('uncaughtException:', e));
 const API_KEY = process.env.GEMINI_API_KEY || '';
 const MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
 const MAX_PROMPT = 1200;
@@ -142,6 +147,6 @@ app.post('/api/generate', async (req, res) => {
 app.use(express.static(DIST));
 app.get('*', (_req, res) => res.sendFile(join(DIST, 'index.html')));
 
-app.listen(PORT, () => {
-  console.log(`Vibe-Lock server on :${PORT} · model=${MODEL} · key=${API_KEY ? 'set' : 'MISSING'}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Vibe-Lock server on ${HOST}:${PORT} · model=${MODEL} · key=${API_KEY ? 'set' : 'MISSING'}`);
 });
